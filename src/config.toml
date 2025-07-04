@@ -1,0 +1,8 @@
+[network]
+bind_ip = "0.0.0.0"
+port = 2425
+broadcast_ip = "255.255.255.255"
+
+[user]
+default_name = "anonymous"
+default_host = "localhost"
