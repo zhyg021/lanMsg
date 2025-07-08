@@ -1,4 +1,5 @@
 use crate::protocol::extract_string_part;
+use crate::config::AppConfig;
 use crate::protocol::{IpMsgPacket, commands};
 use anyhow::Result;
 use std::collections::HashMap;
@@ -62,7 +63,7 @@ impl IpMsgServer {
         Ok(())
     }
 
-    pub async fn listen<F>(&self, callback: F) -> Result<()>
+    pub async fn listen<F>(&self, callback: F, config: Arc<AppConfig>) -> Result<()>
     where
         F: Fn(IpMsgPacket, SocketAddr),
     {
@@ -90,23 +91,46 @@ impl IpMsgServer {
             };
             println!("[Recv] {} bytes from {}", len, addr);
 
-            // 1. 提取可打印字符串部分
-            let string_part = extract_string_part(&buf[..len]);
-            println!("[Debug] Received ({} bytes): {}", len, string_part);
-
-            // 2. 尝试解析协议包
-            match IpMsgPacket::decode(&string_part) {
+            // 1. 根据配置解码原始字节
+            match IpMsgPacket::decode_with_config(&buf[..len], &config) {
                 Ok(packet) => {
+                    println!(
+                        "[Recv] From {}: {}@{} (Cmd: {:#x})",
+                        addr, packet.sender_name, packet.group_name, packet.command
+                    );
                     self.handle_packet(&packet, &addr).await;
                     callback(packet, addr);
                 }
                 Err(e) => {
+                    // 调试用：输出原始十六进制
+                    let hex_str = buf[..len]
+                        .iter()
+                        .map(|b| format!("{:02x}", b))
+                        .collect::<String>();
                     println!(
-                        "[Warn] Decode failed from {}: {} (Raw: {})",
-                        addr, e, string_part
+                        "[Warn] Decode failed from {}: {}\nRaw({} bytes): {}",
+                        addr, e, len, hex_str
                     );
                 }
             }
+
+            // // 1. 提取可打印字符串部分
+            // let string_part = extract_string_part(&buf[..len]);
+            // println!("[Debug] Received ({} bytes): {}", len, string_part);
+
+            // // 2. 尝试解析协议包
+            // match IpMsgPacket::decode(&string_part) {
+            //     Ok(packet) => {
+            //         self.handle_packet(&packet, &addr).await;
+            //         callback(packet, addr);
+            //     }
+            //     Err(e) => {
+            //         println!(
+            //             "[Warn] Decode failed from {}: {} (Raw: {})",
+            //             addr, e, string_part
+            //         );
+            //     }
+            // }
         }
     }
 

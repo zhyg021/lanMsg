@@ -1,0 +1,15 @@
+[network]
+bind_ip = "0.0.0.0"
+port = 2425
+broadcast_ip = "255.255.255.255"
+
+[user]
+default_name = "anonymous"
+default_host = "localhost"
+name = "用户名"
+group = "默认分组"
+
+# 新增编码配置 (可选值: gb2312 或 utf8)
+[encoding]
+protocol = "gbk"  # 协议报文编码
+display = "utf-8"    # 本地显示编码

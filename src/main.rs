@@ -1,7 +1,7 @@
 mod cli;
+mod config;
 mod net;
 mod protocol;
-mod config;
 
 use anyhow::Result;
 use clap::Parser;
@@ -10,6 +10,7 @@ use net::IpMsgServer;
 use protocol::{IpMsgPacket, commands};
 use tokio::io::{self, AsyncBufReadExt};
 use tokio::sync::mpsc;
+use std::sync::Arc;
 
 #[tokio::main]
 async fn main() -> Result<()> {
@@ -24,6 +25,8 @@ async fn main() -> Result<()> {
         }
     };
 
+    let config_clone = Arc::new(config.clone());
+
     // 2. 初始化服务器（自动处理空地址）
     let server = net::IpMsgServer::new(Some(config.bind_addr())).await?;
     println!("Bound to {}", server.bound_addr());
@@ -32,9 +35,12 @@ async fn main() -> Result<()> {
     // 消息接收线程
     tokio::spawn(async move {
         let _ = server_clone
-            .listen(|packet, _| {
-                println!("\n[{}] {}", packet.sender_name, packet.additional_msg);
-            })
+            .listen(
+                |packet, _| {
+                    println!("\n[{}] {}", packet.sender_name, packet.additional_msg);
+                },
+                config_clone.clone(),
+            )
             .await;
     });
 
@@ -46,6 +52,8 @@ async fn main() -> Result<()> {
         sender_host: cli.host.clone(),
         command: commands::BR_ENTRY,
         additional_msg: "".to_string(),
+        group_name: "".to_string(),
+        ..Default::default()
     };
     server.broadcast(&entry_packet).await?;
 
@@ -60,6 +68,8 @@ async fn main() -> Result<()> {
                     sender_host: cli.host.clone(),
                     command: commands::MSG,
                     additional_msg: message,
+                    group_name: "".to_string(),
+                    ..Default::default()
                 };
                 server.send_to(&packet, &addr).await?;
             } else {
@@ -74,6 +84,8 @@ async fn main() -> Result<()> {
                 sender_host: cli.host.clone(),
                 command: commands::MSG,
                 additional_msg: message,
+                group_name: "".to_string(),
+                ..Default::default()
             };
             server.broadcast(&packet).await?;
         }
@@ -156,6 +168,8 @@ async fn main() -> Result<()> {
         sender_host: cli.host.clone(),
         command: commands::BR_EXIT,
         additional_msg: "".to_string(),
+        group_name: "".to_string(),
+        ..Default::default()
     };
     server.broadcast(&exit_packet).await?;
 

@@ -17,6 +17,8 @@ pub struct AppConfig {
     
     #[serde(default)]
     pub debug: DebugConfig,
+    #[serde(default)]
+    pub encoding: EncodingConfig,
 }
 
 // 网络配置
@@ -46,6 +48,16 @@ pub struct UserConfig {
     
     #[serde(default)]
     pub auto_login: bool,
+    pub group: String,
+}
+
+// 编码格式
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct EncodingConfig {
+    #[serde(default = "default_gbk")]
+    pub protocol: String, // 协议编码 (gbk/utf8)
+    #[serde(default = "default_utf8")]
+    pub display: String,  // 显示编码
 }
 
 // 调试配置
@@ -65,7 +77,10 @@ fn default_broadcast_ip() -> String { "255.255.255.255".to_string() }
 fn default_timeout_secs() -> u64 { 3 }
 fn default_user_name() -> String { "anonymous".to_string() }
 fn default_user_host() -> String { "localhost".to_string() }
+fn default_user_group() -> String { "group".to_string() }
 fn default_log_level() -> String { "info".to_string() }
+fn default_gbk() -> String { "gbk".to_string() }
+fn default_utf8() -> String { "utf-8".to_string() }
 
 // 实现默认配置
 impl Default for AppConfig {
@@ -74,6 +89,7 @@ impl Default for AppConfig {
             network: NetworkConfig::default(),
             user: UserConfig::default(),
             debug: DebugConfig::default(),
+            encoding: EncodingConfig::default(),
         }
     }
 }
@@ -94,6 +110,7 @@ impl Default for UserConfig {
         Self {
             name: default_user_name(),
             host: default_user_host(),
+            group: default_user_group(),
             auto_login: false,
         }
     }
@@ -104,6 +121,15 @@ impl Default for DebugConfig {
         Self {
             log_level: default_log_level(),
             dump_packets: false,
+        }
+    }
+}
+
+impl Default for EncodingConfig {
+    fn default() -> Self {
+        Self{
+            protocol: default_gbk(),
+            display: default_utf8(),
         }
     }
 }
