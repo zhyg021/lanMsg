@@ -8,7 +8,7 @@ use std::sync::Arc;
 use tokio::net::{TcpListener, UdpSocket};
 use tokio::sync::RwLock;
 
-const IPMSG_PORT: u16 = 2425;
+pub const IPMSG_PORT: u16 = 2425;
 const FILE_PORT: u16 = 2426;
 
 #[derive(Debug, Clone)]
@@ -166,7 +166,8 @@ impl IpMsgServer {
     async fn handle_packet(&self, packet: &IpMsgPacket, addr: &SocketAddr) {
         let mut users = self.users.write().await;
         let username = format!("{}@{}", packet.sender_name, packet.sender_host);
-        match packet.command {
+        let command = packet.command & 0xff;
+        match command {
             commands::BR_ENTRY => {
                 users.insert(username, *addr);
             }

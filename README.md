@@ -54,13 +54,19 @@ lanMsg/
     nano config.toml
 2. 启动程序：\
 ./target/release/lanMsg
-3. 可用命令：\
+3. 可用命令：
 
 ```text    
-list        显示在线用户（默认自动显示） \
-send        <用户> <消息>  发送文本消息    \
-help        显示帮助信息 \
+list        显示在线用户（默认自动显示） 
+send        <用户> <消息>  发送文本消息    
+help        显示帮助信息 
 exit        退出程序 
+```
+4. 运行
+```text
+lanMsg --name Alice --host PC-1 list
+lanMsg --name Alice --host PC-1 send bob hello
+lanMsg --name Alice --host PC-1 send 127.0.0.1 hello
 ```
 ## 许可证
 本项目采用 MIT 许可证 - 详见 LICENSE 文件。

@@ -8,9 +8,9 @@ use clap::Parser;
 use cli::Cli;
 use net::IpMsgServer;
 use protocol::{IpMsgPacket, commands};
+use std::sync::Arc;
 use tokio::io::{self, AsyncBufReadExt};
 use tokio::sync::mpsc;
-use std::sync::Arc;
 
 #[tokio::main]
 async fn main() -> Result<()> {
@@ -57,10 +57,23 @@ async fn main() -> Result<()> {
     };
     server.broadcast(&entry_packet).await?;
 
+    // println!("Fetching online users...");
+    tokio::time::sleep(std::time::Duration::from_secs(2)).await;
+
     match cli.command {
         cli::Commands::Send { recipient, message } => {
-            let recipient_full = format!("{}@{}", recipient, cli.host);
-            if let Some(addr) = server.get_user_addr(&recipient).await {
+            // 检查 recipient 是否是有效的 IP 地址
+            let addr = if let Ok(ip_addr) = recipient.parse::<std::net::IpAddr>() {
+                // 如果是 IP 地址，直接使用
+                Some(std::net::SocketAddr::new(ip_addr, net::IPMSG_PORT))
+            } else {
+                // 否则按用户名查找
+                let recipient_full = format!("{}@{}", recipient, cli.host);
+                server.get_user_addr(&recipient_full).await
+            };
+
+            // let recipient_full = format!("{}@{}", recipient, cli.host);
+            if let Some(addr) = addr {
                 let packet = IpMsgPacket {
                     version: "lanMsg 0.1".to_string(),
                     packet_no: rand::random(),
